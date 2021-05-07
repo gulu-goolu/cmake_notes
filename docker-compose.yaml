@@ -1,0 +1,14 @@
+---
+version: '3.9'
+services:
+  cmake_notes:
+    build:
+      context: ./docker
+      args:
+        - UID
+        - GID
+    volumes:
+      - ./:/cmake_notes
+    command: /usr/bin/tail -f /dev/null
+    working_dir: /cmake_notes
+    network_mode: none
