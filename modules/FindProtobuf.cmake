@@ -1,4 +1,26 @@
-include (FetchContent)
+if (Protobuf_DOWNLOAD_URL)
+    include (FetchContent)
+
+    FetchContent_Declare (protobuf
+        URL ${Protobuf_DOWNLOAD_URL}
+    )
+    FetchContent_GetProperties(protobuf)
+    if (NOT protobuf_POPULATED)
+        FetchContent_Populate(protobuf)
+        set (protobuf_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+        add_compile_options ("-fPIC")
+        add_subdirectory (${protobuf_SOURCE_DIR}/cmake ${protobuf_BINARY_DIR})
+    endif ()
+
+    set (Protobuf_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:libprotobuf,INCLUDE_DIRECTORIES>)
+    set (Protobuf_LINK_LIBRARIES $<>)
+    set (Protobuf_PROTOC_PATH $<TARGET_FILE:protoc>)
+elseif (NOT DEFINED Protobuf_INCLUDE_DIRECTORIES 
+        OR NOT DEFINED Protobuf_LINK_LIBRARIES 
+        OR NOT DEFINED Protobuf_PROTOC_PATH
+    )
+    message (FATAL_ERROR "must config Protobuf_INCLUDE_DIRECTORIES, Protobuf_LINK_LIBRARIES, Protobuf_PROTOC_PATH")
+endif ()
 
 # 为一组 proto 文件生成一个 target
 # example:
@@ -7,7 +29,7 @@ include (FetchContent)
 #       PROTO_ROOT_DIRECTORY ${MLPLAT_DIR}/mlplat-protos
 #       PROTO_DIRECTORIES ${MLPLAT_DIR}/mlplat-protos
 #   )
-function (aibox_add_proto_library target)
+function (add_proto_library target)
     set (options
         LIBRARY # 编译成静态库
         OBJECT  # 编译成 object
@@ -70,10 +92,10 @@ function (aibox_add_proto_library target)
 
         set (_proto ${p_PROTO_ROOT_DIRECTORY}/${proto_file})
         add_custom_command (OUTPUT ${generated_cpp_src} ${generated_cpp_hdr}
-            DEPENDS protoc ${_proto}
+            DEPENDS ${Protobuf_PROTOC_PATH} ${_proto}
             COMMENT "generate: ${generated_cpp_hdr} ${generated_cpp_src}, proto: ${_proto}"
             COMMAND ${CMAKE_COMMAND} -E make_directory ${p_GENERATED_CPP_DIR}/${_directory}
-            COMMAND protoc "${proto_path_list}" --cpp_out=${p_GENERATED_CPP_DIR} ${_proto}
+            COMMAND ${Protobuf_PROTOC_PATH} "${proto_path_list}" --cpp_out=${p_GENERATED_CPP_DIR} ${_proto}
         )
         list (APPEND generated_cpp_list ${generated_cpp_src} ${generated_cpp_hdr})
     endforeach ()
@@ -94,7 +116,7 @@ function (aibox_add_proto_library target)
     add_library (${target} ${target_type} ${generated_cpp_list})
     target_include_directories (${target} PUBLIC
         ${p_GENERATED_CPP_DIR}
-        $<TARGET_PROPERTY:libprotobuf,INCLUDE_DIRECTORIES>
+        ${Protobuf_INCLUDE_DIRECTORIES}
     )
 
     # 根据需要链接 libprotobuf
