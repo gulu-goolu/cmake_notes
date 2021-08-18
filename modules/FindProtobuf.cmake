@@ -67,8 +67,15 @@ function (add_proto_library target)
 
     # 将 PROTO_LIST 中的 proto 文件添加到 relative_proto_list 中
     foreach (proto_file ${p_PROTO_LIST})
-        file (RELATIVE_PATH temp_relative_path ${p_PROTO_ROOT_DIRECTORY} ${proto_file})
-        list (APPEND relative_proto_list ${temp_relative_path})
+        # 如果使用的是相对路径，将其转换为绝对路径
+        string (REGEX MATCH "^/.*$" matched ${proto_file})
+        if ("${matched}" STREQUAL "")
+            set (proto_file ${CMAKE_CURRENT_SOURCE_DIR}/${proto_file})
+            message (STATUS "relative path: ${proto_file}")
+        endif ()
+
+        file (RELATIVE_PATH relative_proto ${p_PROTO_ROOT_DIRECTORY} ${proto_file})
+        list (APPEND relative_proto_list ${relative_proto})
     endforeach ()
 
     # 显示输入的 proto 文件列表
@@ -103,7 +110,7 @@ function (add_proto_library target)
     # 获取 target 类型
     set (target_type OBJECT)
     if (p_LIBRARY)
-        set (target_type LIBRARY)
+        set (target_type) # 默认 LIBRARY，不用显式设置
     elseif (P_OBJECT)
         set (target_type OBJECT)
     elseif (p_SHARED)
