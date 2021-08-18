@@ -24,22 +24,23 @@ endif ()
 
 # 为一组 proto 文件生成一个 target
 # example:
-#   aibox_add_proto_library (mlplat-protos OBJECT
-#       GENERATED_CPP_DIR ${CMAKE_CURRENT_BINARY}/gen-cpp
-#       PROTO_ROOT_DIRECTORY ${MLPLAT_DIR}/mlplat-protos
-#       PROTO_DIRECTORIES ${MLPLAT_DIR}/mlplat-protos
+#   add_proto_library (test_protos_lib OBJECT
+#       GENERATED_CPP_DIR ${CMAKE_CURRENT_BINARY}/proto-gen-cpp
+#       PROTO_ROOT_DIRECTORY ${CURRENT_SOURCE_DIR}
+#       PROTO_LIST src/test.proto
+#       PROTO_DIRECTORIES ${CURRENT_SOURCE_DIR}
 #   )
 function (add_proto_library target)
     set (options
-        LIBRARY # 编译成静态库
-        OBJECT  # 编译成 object
+        STATIC # 编译成静态库
+        OBJECT  # 编译成 object, 这是默认参数
         SHARED  # 编译成共享库
         MODULE  # 供 dlopen 加载的动态库
         VERBOSE # 显示 log
     )
     set (one_value_keywords
         PROTO_ROOT_DIRECTORY # 用以确定生成的 cpp 文件结构的根目录
-        GENERATED_CPP_DIR    # 生成路径
+        GENERATED_CPP_DIR    # 生成路径, 如果没有设置此参数, 默认为 ${CMAKE_CURRENT_BINARY_DIR}/proto-gen-cpp
     )
     set (multi_value_keywords
         PROTO_DIRECTORIES           # proto 文件夹，文件夹下的所有文件都会加入到生成列表中
@@ -56,7 +57,7 @@ function (add_proto_library target)
 
     # 处理 GENERATED_CPP_DIR
     if (NOT p_GENERATED_CPP_DIR)
-        set (p_GENERATED_CPP_DIR ${CMAKE_CURRENT_BINARY_DIR}/protobuf-cpp)
+        set (p_GENERATED_CPP_DIR ${CMAKE_CURRENT_BINARY_DIR}/proto-gen-cpp)
     endif ()
 
     # 将 PROTO_DIRECTORIES 下的 proto 文件加到 relative_proto_list 中
@@ -109,8 +110,8 @@ function (add_proto_library target)
 
     # 获取 target 类型
     set (target_type OBJECT)
-    if (p_LIBRARY)
-        set (target_type) # 默认 LIBRARY，不用显式设置
+    if (p_STATIC)
+        set (target_type STATIC) # 默认 STATIC
     elseif (P_OBJECT)
         set (target_type OBJECT)
     elseif (p_SHARED)
@@ -127,8 +128,7 @@ function (add_proto_library target)
     )
 
     # 根据需要链接 libprotobuf
-    if (NOT ${target} EQUAL "OBJECT")
+    if (NOT "${target_type}" STREQUAL "OBJECT")
         target_link_libraries (${target} ${p_LINK_LIBRARIES})
     endif ()
 endfunction ()
-
