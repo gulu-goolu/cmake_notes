@@ -12,8 +12,9 @@ if (Protobuf_DOWNLOAD_URL)
         add_subdirectory (${protobuf_SOURCE_DIR}/cmake ${protobuf_BINARY_DIR})
     endif ()
 
+    # 导出 Protobuf_INCLUDE_DIRECTORIES, Protobuf_LINK_LIBRARIES, Protobuf_PROTOC_PATH 三个变量
     set (Protobuf_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:libprotobuf,INCLUDE_DIRECTORIES>)
-    set (Protobuf_LINK_LIBRARIES $<>)
+    set (Protobuf_LINK_LIBRARIES libprotobuf)
     set (Protobuf_PROTOC_PATH $<TARGET_FILE:protoc>)
 elseif (NOT DEFINED Protobuf_INCLUDE_DIRECTORIES 
         OR NOT DEFINED Protobuf_LINK_LIBRARIES 
