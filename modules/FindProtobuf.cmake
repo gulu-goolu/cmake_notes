@@ -9,7 +9,10 @@ if (Protobuf_DOWNLOAD_URL)
         FetchContent_Populate(protobuf)
         set (protobuf_BUILD_TESTS OFF CACHE BOOL "" FORCE)
         add_compile_options ("-fPIC")
-        add_subdirectory (${protobuf_SOURCE_DIR}/cmake ${protobuf_BINARY_DIR})
+        add_subdirectory (${protobuf_SOURCE_DIR}/cmake
+            ${protobuf_BINARY_DIR}
+            EXCLUDE_FROM_ALL
+        )
     endif ()
 
     # 导出 Protobuf_INCLUDE_DIRECTORIES, Protobuf_LINK_LIBRARIES, Protobuf_PROTOC_PATH 三个变量
