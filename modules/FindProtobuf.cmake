@@ -19,6 +19,7 @@ if (Protobuf_DOWNLOAD_URL)
     set (Protobuf_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:libprotobuf,INCLUDE_DIRECTORIES>)
     set (Protobuf_LINK_LIBRARIES libprotobuf)
     set (Protobuf_PROTOC_PATH $<TARGET_FILE:protoc>)
+    set (Protobuf_SOURCE_DIR ${protobuf_SOURCE_DIR})
 elseif (NOT DEFINED Protobuf_INCLUDE_DIRECTORIES 
         OR NOT DEFINED Protobuf_LINK_LIBRARIES 
         OR NOT DEFINED Protobuf_PROTOC_PATH
@@ -47,10 +48,10 @@ function (add_proto_library target)
         GENERATED_CPP_DIR    # 生成路径, 如果没有设置此参数, 默认为 ${CMAKE_CURRENT_BINARY_DIR}/proto-gen-cpp
     )
     set (multi_value_keywords
-        PROTO_DIRECTORIES           # proto 文件夹，文件夹下的所有文件都会加入到生成列表中
-        PROTO_LIST                  # proto 文件列表
-        PROTO_INCLUDE_DIRECTORIES   # 编译 proto 时的搜索路径
-        LINK_LIBRARIES              # 需要链接的 library，如果设置了 OBJECT，这个参数将会被忽略
+        PROTO_DIRECTORIES       # proto 文件夹，文件夹下的所有文件都会加入到生成列表中
+        PROTO_LIST              # proto 文件列表
+        IMPORT_DIRECTORIES      # 编译 proto 时的搜索路径
+        LINK_LIBRARIES          # 需要链接的 library，如果设置了 OBJECT，这个参数将会被忽略
     )
     cmake_parse_arguments (p
         "${options}"
@@ -91,9 +92,11 @@ function (add_proto_library target)
     # 设置 protoc 的 include directories
     # PROTO_ROOT_DIRECTORY 将会被自动加到 include directories 中
     set (proto_path_list "--proto_path=${p_PROTO_ROOT_DIRECTORY}")
-    foreach (item ${p_PROTO_INCLUDE_DIRECTORIES})
+    foreach (item ${p_IMPORT_DIRECTORIES})
         list (APPEND proto_path_list "--proto_path=${item}")
     endforeach ()
+
+    message (STATUS "proto path list: ${proto_path_list}")
 
     # 调用 protoc 生成 cpp 文件
     foreach (proto_file ${relative_proto_list})
@@ -107,7 +110,8 @@ function (add_proto_library target)
             DEPENDS ${Protobuf_PROTOC_PATH} ${_proto}
             COMMENT "generate: ${generated_cpp_hdr} ${generated_cpp_src}, proto: ${_proto}"
             COMMAND ${CMAKE_COMMAND} -E make_directory ${p_GENERATED_CPP_DIR}/${_directory}
-            COMMAND ${Protobuf_PROTOC_PATH} "${proto_path_list}" --cpp_out=${p_GENERATED_CPP_DIR} ${_proto}
+            COMMAND ${Protobuf_PROTOC_PATH} ${proto_path_list} --cpp_out=${p_GENERATED_CPP_DIR} ${_proto}
+            VERBATIM
         )
         list (APPEND generated_cpp_list ${generated_cpp_src} ${generated_cpp_hdr})
     endforeach ()
