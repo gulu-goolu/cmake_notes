@@ -96,8 +96,6 @@ function (add_proto_library target)
         list (APPEND proto_path_list "--proto_path=${item}")
     endforeach ()
 
-    message (STATUS "proto path list: ${proto_path_list}")
-
     # 调用 protoc 生成 cpp 文件
     foreach (proto_file ${relative_proto_list})
         get_filename_component (_directory ${proto_file} DIRECTORY)
